@@ -1,0 +1,14 @@
+yellowalert/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                # FastAPI entry point
+│   ├── config.py              # DB config
+│   ├── database.py            # DB connection
+│   ├── models/
+│   │   └── auth_models.py     # Pydantic models
+│   ├── routes/
+│   │   └── auth_routes.py     # Authentication API routes
+│   └── utils/
+│       └── security.py        # Token utils (JWT, etc.)
+├── requirements.txt
+└── .env

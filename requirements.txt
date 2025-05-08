@@ -1,0 +1,7 @@
+FastAPI
+uvicorn
+sqlalchemy
+pydantic
+python-jose
+passlib
+dotenv

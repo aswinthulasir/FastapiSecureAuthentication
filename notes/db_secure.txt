@@ -1,0 +1,102 @@
+Note: PostgreSQL does not natively support bcrypt, so we’ll simulate bcrypt with pgcrypto (crypt() and gen_salt()), and combine with SHA-256 via digest().
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- USERS table
+CREATE TABLE users (
+    u_id VARCHAR(16) PRIMARY KEY,
+    email BYTEA NOT NULL  -- Encrypted
+);
+
+-- SALTS table
+CREATE TABLE salts (
+    u_id VARCHAR(16) PRIMARY KEY REFERENCES users(u_id),
+    salt TEXT NOT NULL
+);
+
+-- PASSWORDS table
+CREATE TABLE passwords (
+    u_id VARCHAR(16) PRIMARY KEY REFERENCES users(u_id),
+    password_hash TEXT NOT NULL
+);
+
+-- TOKENS table
+CREATE TABLE tokens (
+    u_id VARCHAR(16) PRIMARY KEY REFERENCES users(u_id),
+    token TEXT NOT NULL,
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+CREATE OR REPLACE PROCEDURE register_user(
+    input_uid VARCHAR,
+    input_email TEXT,
+    input_password TEXT
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+    generated_salt TEXT;
+    hashed_password TEXT;
+    encrypted_email BYTEA;
+BEGIN
+    generated_salt := gen_salt('bf');
+    hashed_password := crypt(input_password, generated_salt);
+    encrypted_email := pgp_sym_encrypt(input_email, generated_salt);
+
+    INSERT INTO users(u_id, email) VALUES (input_uid, encrypted_email);
+    INSERT INTO salts(u_id, salt) VALUES (input_uid, generated_salt);
+    INSERT INTO passwords(u_id, password_hash) VALUES (input_uid, hashed_password);
+END;
+$$;
+
+
+
+
+CREATE OR REPLACE FUNCTION store_token(
+    input_uid VARCHAR,
+    input_token TEXT
+)
+RETURNS VOID AS $$
+BEGIN
+    INSERT INTO tokens(u_id, token)
+    VALUES (input_uid, input_token)
+    ON CONFLICT (u_id) DO UPDATE SET token = EXCLUDED.token, issued_at = CURRENT_TIMESTAMP;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION authenticate_user(
+    input_email TEXT,
+    input_password TEXT
+)
+RETURNS VARCHAR AS $$
+DECLARE
+    uid_match VARCHAR;
+    decrypted_email TEXT;
+    db_email BYTEA;
+    db_salt TEXT;
+    db_hash TEXT;
+BEGIN
+    -- Find all emails, decrypt and compare
+    FOR uid_match, db_email IN SELECT u_id, email FROM users LOOP
+        SELECT salt INTO db_salt FROM salts WHERE u_id = uid_match;
+        decrypted_email := pgp_sym_decrypt(db_email, db_salt);
+
+        IF decrypted_email = input_email THEN
+            SELECT password_hash INTO db_hash FROM passwords WHERE u_id = uid_match;
+
+            IF db_hash = crypt(input_password, db_hash) THEN
+                RETURN uid_match; -- Authentication successful
+            ELSE
+                RETURN NULL; -- Wrong password
+            END IF;
+        END IF;
+    END LOOP;
+
+    RETURN NULL; -- Email not found
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+
