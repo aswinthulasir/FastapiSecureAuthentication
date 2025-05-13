@@ -1,0 +1,14 @@
+CREATE TABLE hotel_type (
+    u_type INT PRIMARY KEY,
+    type_name VARCHAR(50) NOT NULL
+);
+
+-- Sample data
+INSERT INTO hotel_type (u_type, type_name)
+VALUES
+    (1, 'Vegetarian'),
+    (2, 'Non-Vegetarian'),
+    (3, 'Multi-Cusine'),
+    (4, 'Arabic'),
+    (5, 'Chinese'),
+    (6, 'Broasted and Grills');
