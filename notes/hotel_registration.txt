@@ -12,3 +12,43 @@ VALUES
     (4, 'Arabic'),
     (5, 'Chinese'),
     (6, 'Broasted and Grills');
+
+
+CREATE TABLE dish_types (
+    type_id INT PRIMARY KEY,
+    type_name VARCHAR(50) NOT NULL
+);
+
+INSERT INTO dish_types VALUES
+(1, 'Starter'),
+(2, 'Main Course'),
+(3, 'Dessert'),
+(4, 'Beverage');
+
+CREATE TABLE food_types (
+    food_id INT PRIMARY KEY,
+    food_name VARCHAR(50) NOT NULL
+);
+
+INSERT INTO food_types VALUES
+(1, 'Veg'),
+(2, 'Non-Veg'),
+(3, 'Egg'),
+(4, 'Beef');
+
+
+CREATE TABLE hotel_items (
+    item_id SERIAL PRIMARY KEY,
+    u_id VARCHAR(16) NOT NULL,
+    dish_name VARCHAR(100) NOT NULL,
+    dish_type INT NOT NULL,
+    dish_description TEXT,
+    img_1 TEXT,
+    img_2 TEXT,
+    rate NUMERIC(10, 2) NOT NULL,
+    food_type INT NOT NULL,
+    status BOOLEAN DEFAULT TRUE, -- availability status
+    FOREIGN KEY (u_id) REFERENCES users(u_id),
+    FOREIGN KEY (dish_type) REFERENCES dish_types(type_id),
+    FOREIGN KEY (food_type) REFERENCES food_types(food_id)
+);

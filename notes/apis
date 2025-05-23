@@ -1,3 +1,6 @@
 User Registration - POST http://localhost:8000/auth/register
 User Login - http://localhost:8000/auth/login
 Hotel Registration - POST http://localhost:8000/hotel/register
+Add Item - POST http://localhost:8000/item/add
+Update Availability Status - PUT http://localhost:8000/hotel-items/update-dish-status
+Delete Items - DELETE http://localhost:8000/hotel-items/delete-dish/1
